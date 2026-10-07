@@ -24,8 +24,10 @@ st.set_page_config(page_title="🗣️ Tutor de Español", layout="wide", page_i
 # ==============================================================================
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH, timeout=20.0)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=NORMAL;")
+    try:
+        conn.execute("PRAGMA journal_mode=DELETE;")
+    except Exception:
+        pass
     return conn
 
 def init_db():
@@ -111,9 +113,9 @@ def get_authorized_students() -> dict:
                 csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
                 df = pd.read_csv(csv_url)
             else:
-                return {"Edy": "peru2026"}
+                return {"Edgar": "peru2026"}
         except Exception:
-            return {"Edy": "peru2026"}
+            return {"Edgar": "peru2026"}
 
     try:
         df.columns = [str(c).strip().lower() for c in df.columns]
@@ -125,7 +127,7 @@ def get_authorized_students() -> dict:
         df[pin_col] = df[pin_col].astype(str).str.strip()
         return dict(zip(df[name_col], df[pin_col]))
     except Exception:
-        return {"Edy": "peru2026"}
+        return {"Edgar": "peru2026"}
 
 # ==============================================================================
 # 4. MOTOR DE AUDIO NATIVO EN ESPAÑOL (WEB SPEECH API)
@@ -173,7 +175,6 @@ def render_communicative_audio(full_response_text, auto_play=True, key_suffix=""
             synth.cancel();
 
             var voices = synth.getVoices();
-            // Buscar una voz nativa en español
             var esVoice = voices.find(function(v) {{ 
                 return v.lang && (v.lang.toLowerCase().startsWith("es")); 
             }}) || voices[0];
@@ -381,7 +382,7 @@ col_audio, col_info = st.columns([1, 2])
 with col_audio:
     recorded_audio = st.audio_input("🎙️ Habla aquí (Grabar y enviar):")
 with col_info:
-    st.caption("💡 **Consejo:** Presiona el botón rojo para hablar en español (o inglés si tienes dudas). Al terminar, presiona detener para enviar.")
+    st.caption("💡 **Consejo:** Presiona el botón para hablar en español (o inglés si tienes dudas). Al terminar, presiona detener para enviar.")
 
 text_input = st.chat_input("O escribe tu mensaje aquí si prefieres teclear...")
 
@@ -459,7 +460,6 @@ if incoming_text:
             fast_config = types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 max_output_tokens=400,
-                temperature=0.6
             )
 
             def stream_response():
@@ -483,7 +483,6 @@ if incoming_text:
                 "YES" if uploaded_file else "NO"
             )
 
-            # Diagnóstico pedagógico invisible en segundo plano (para analítica docente)
             def run_background_analysis(rec_id, query_content, resp, student_name):
                 if not rec_id:
                     return
